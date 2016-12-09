@@ -112,7 +112,7 @@ void ofApp::mousePressed(int x, int y, int button){
 	OPENFILENAMEA ofn;
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = 0;
+	ofn.hwndOwner = ofGetWin32Window();
 	ofn.lpstrFilter = "All Files (*.*)\0*.*\0";
 	ofn.lpstrFile = fileName;
 	ofn.nMaxFile = MAX_PATH;
