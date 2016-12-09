@@ -4,6 +4,7 @@
 #include "ofMain.h"
 #pragma warning(default: 4819)
 #include "ScrollBar4OF.hpp"
+#include <vector>
 #include <Windows.h>
 #include <Commdlg.h>
 

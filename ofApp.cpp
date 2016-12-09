@@ -106,7 +106,8 @@ void ofApp::mousePressed(int x, int y, int button){
 	}
 
 	// Selects the picture to show
-	char * fileName = new char[MAX_PATH + 1];
+	std::vector<char> fileName;
+	fileName.reserve(MAX_PATH + 1);
 	fileName[0] = '\0';
 
 	OPENFILENAMEA ofn;
@@ -114,20 +115,19 @@ void ofApp::mousePressed(int x, int y, int button){
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = ofGetWin32Window();
 	ofn.lpstrFilter = "All Files (*.*)\0*.*\0";
-	ofn.lpstrFile = fileName;
+	ofn.lpstrFile = fileName.data();
 	ofn.nMaxFile = MAX_PATH;
 	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrDefExt = 0;
 
 	if (GetOpenFileNameA(&ofn)) {
-		if (picture.load(fileName)) {
+		if (picture.load(fileName.data())) {
 			updateScrollBars();
 			hscroll.current(0);
 			vscroll.current(0);
 			draw();
 		}
 	}
-	delete[] fileName;
 }
 
 //--------------------------------------------------------------
