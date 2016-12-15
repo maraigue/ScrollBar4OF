@@ -14,7 +14,7 @@ private:
 	int scrollable_size_, knob_size_;
 
 	// Variables for scroll bar manipulations
-	bool dragged_; // Whether the knob is dragged or not
+	int dragged_pos_; // The position (in the length direction) where the knob is dragged; -1 if not dragged
 
 	uint64_t button_pressed_time_; // The time the button or the bar is clicked
 	int button_press_count_; // Just after the click: 2, Keep pressing the mouse button: 1, No click: 0
@@ -124,7 +124,8 @@ private:
 			return min_;
 		}else{
 			Location::convert_coord(clickpos_widthdir, clickpos_lengthdir, x, y);
-			return min_ + (max_ - min_) * (clickpos_lengthdir - (bar_pos_lengthdir_ + bar_width_ + knob_size_ / 2)) / (scrollable_size_ - knob_size_);
+			int base_pos = (dragged_pos_ >= 0 ? dragged_pos_ : knob_size_ / 2);
+			return min_ + (max_ - min_) * (clickpos_lengthdir - (bar_pos_lengthdir_ + bar_width_ + base_pos)) / (scrollable_size_ - knob_size_);
 		}
 	}
 
@@ -133,7 +134,7 @@ public:
 		: border_weight_(2), duration_first_(250), duration_step_(50),
 		  bar_pos_widthdir_(0), bar_pos_lengthdir_(0), bar_width_(0), bar_length_(0),
 		  min_(0), max_(100), current_(0), change_by_button_(1), change_by_bar_(10),
-		  dragged_(false), button_press_count_(0),
+		  dragged_pos_(-1), button_press_count_(0),
 		  minus_button_pressed_(false), plus_button_pressed_(false), bar_pressed_(false) {};
 
 	// The weight of the border lines.
@@ -214,7 +215,7 @@ public:
 	// Call this in `mousePressed' event defined by openFrameworks.
 	// If the mouse is not on the scroll bar, this returns false; otherwise true.
 	bool mousePressed(int x, int y) {
-		dragged_ = false;
+		dragged_pos_ = -1;
 
 		int clickpos_widthdir, clickpos_lengthdir;
 		Location::convert_coord(clickpos_widthdir, clickpos_lengthdir, x, y);
@@ -256,7 +257,8 @@ public:
 			button_pressed_time_ = ofGetElapsedTimeMillis();
 		} else {
 			// Knob
-			dragged_ = true;
+			dragged_pos_ = clickpos_lengthdir - knob_top;
+			if (dragged_pos_ < 0) dragged_pos_ = 0;
 		}
 
 		return true;
@@ -266,7 +268,7 @@ public:
 	// Call this in `mouseDragged' event defined by openFrameworks.
 	// If the drag is for the scroll bar, this returns true; otherwise false.
 	bool mouseDragged(int x, int y) {
-		if (dragged_) {
+		if (dragged_pos_ >= 0) {
 			current(DraggedCoord2Value(x, y));
 			return true;
 		}
@@ -280,8 +282,8 @@ public:
 	// Call this in `mouseReleased' event defined by openFrameworks.
 	// If the release is for the scroll bar, this returns true; otherwise false.
 	bool mouseReleased(int x, int y) {
-		if (dragged_) {
-			dragged_ = false;
+		if (dragged_pos_ >= 0) {
+			dragged_pos_ = -1;
 			return true;
 		}
 		else if (button_press_count_) {
@@ -297,48 +299,51 @@ public:
 	}
 
 	// The method should be called for time-dependent processes of the scroll bar.
+	// Returns whether some operations are done.
 	// Call this in `update' event defined by openFrameworks.
-	void update() {
-		if (button_press_count_) {
-			int change;
-			if (minus_button_pressed_) {
-				change = -change_by_button_;
-			}
-			else if (plus_button_pressed_) {
-				change = change_by_button_;
-			}
-			else if (bar_pressed_) {
-				change = change_by_bar_ * sgn(button_press_move_limit_ - current_);
-			}
+	bool update() {
+		if (!button_press_count_) return false;
 
-			int newval;
+		int change;
+		if (minus_button_pressed_) {
+			change = -change_by_button_;
+		}
+		else if (plus_button_pressed_) {
+			change = change_by_button_;
+		}
+		else if (bar_pressed_) {
+			change = change_by_bar_ * sgn(button_press_move_limit_ - current_);
+		}
 
-			uint64_t now = ofGetElapsedTimeMillis();
-			if (button_press_count_ == 2) {
-				if(now - button_pressed_time_ >= duration_first_) {
-					button_pressed_time_ += duration_first_;
-					button_press_count_ = 1;
+		int newval;
 
-					newval = current_ + change;
-					if (bar_pressed_ && sgn(current_ - button_press_move_limit_) * sgn(newval - button_press_move_limit_) < 0) {
-						newval = button_press_move_limit_;
-					}
-					current(newval);
-				}
-				else {
-					return;
-				}
-			}
+		uint64_t now = ofGetElapsedTimeMillis();
+		if (button_press_count_ == 2) {
+			if(now - button_pressed_time_ >= duration_first_) {
+				button_pressed_time_ += duration_first_;
+				button_press_count_ = 1;
 
-			while (now - button_pressed_time_ >= duration_step_) {
-				button_pressed_time_ += duration_step_;
 				newval = current_ + change;
 				if (bar_pressed_ && sgn(current_ - button_press_move_limit_) * sgn(newval - button_press_move_limit_) < 0) {
 					newval = button_press_move_limit_;
 				}
 				current(newval);
 			}
+			else {
+				return false;
+			}
 		}
+
+		while (now - button_pressed_time_ >= duration_step_) {
+			button_pressed_time_ += duration_step_;
+			newval = current_ + change;
+			if (bar_pressed_ && sgn(current_ - button_press_move_limit_) * sgn(newval - button_press_move_limit_) < 0) {
+				newval = button_press_move_limit_;
+			}
+			current(newval);
+		}
+		
+		return true;
 	}
 
 	// The method should be called to draw the scroll bar.
