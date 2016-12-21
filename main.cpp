@@ -1,4 +1,4 @@
-#pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
+//#pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
 #pragma warning(disable: 4819)
 #include "ofMain.h"
 #pragma warning(default: 4819)

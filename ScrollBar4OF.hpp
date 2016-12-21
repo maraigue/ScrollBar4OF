@@ -2,9 +2,40 @@
 #include "ofMain.h"
 #pragma warning(default: 4819)
 #include <iostream>
+#include <boost/scoped_ptr.hpp>
+
+// Uncomment to specify hooks by `std::function' (standardized in C++11)
+//#define SCROLLBAR4OF_CPP11_STD_FUNCTION
+
+#ifdef SCROLLBAR4OF_CPP11_STD_FUNCTION
+#include <functional>
+#endif // SCROLLBAR4OF_CPP11_STD_FUNCTION
 
 template <class Location>
 class ScrollBarBase {
+public:
+	class ScrollBarHook {
+	public:
+		virtual void action(ScrollBarBase<Location> &) = 0;
+	};
+
+	class ScrollBarHookEmpty : public ScrollBarHook {
+	public:
+		void action(ScrollBarBase<Location> &) { }
+	};
+
+#ifdef SCROLLBAR4OF_CPP11_STD_FUNCTION
+	typedef std::function<void(ScrollBarBase<Location> &)> hook_function_type;
+
+	class ScrollBarHookFunction : public ScrollBarHook {
+	private:
+		hook_function_type func_;
+	public:
+		ScrollBarHookFunction(hook_function_type func) : func_(func) {}
+		void action(ScrollBarBase<Location> & scrollbar) { func_(scrollbar); }
+	};
+#endif // SCROLLBAR4OF_CPP11_STD_FUNCTION
+
 private:
 	int border_weight_; 
 	uint64_t duration_first_;
@@ -20,6 +51,8 @@ private:
 	int button_press_count_; // Just after the click: 2, Keep pressing the mouse button: 1, No click: 0
 	int button_press_move_limit_; // The limit of the value change (determined by the mouse position)
 	bool minus_button_pressed_, plus_button_pressed_, bar_pressed_;
+
+	boost::scoped_ptr<ScrollBarHook> hook_;
 
 	// Cache the sizes for drawing the scroll bar
 	void update_bar_size_info() {
@@ -132,10 +165,12 @@ private:
 public:
 	ScrollBarBase()
 		: border_weight_(2), duration_first_(250), duration_step_(50),
-		  bar_pos_widthdir_(0), bar_pos_lengthdir_(0), bar_width_(0), bar_length_(0),
-		  min_(0), max_(100), current_(0), change_by_button_(1), change_by_bar_(10),
-		  dragged_pos_(-1), button_press_count_(0),
-		  minus_button_pressed_(false), plus_button_pressed_(false), bar_pressed_(false) {};
+		bar_pos_widthdir_(0), bar_pos_lengthdir_(0), bar_width_(0), bar_length_(0),
+		min_(0), max_(100), current_(0), change_by_button_(1), change_by_bar_(10),
+		dragged_pos_(-1), button_press_count_(0),
+		minus_button_pressed_(false), plus_button_pressed_(false), bar_pressed_(false),
+		hook_(new ScrollBarHookEmpty())
+	{}
 
 	// The weight of the border lines.
 	int border_weight() const { return border_weight_; }
@@ -192,6 +227,12 @@ public:
 		check_min_max();
 		check_min_current();
 		update_bar_size_info();
+		try {
+			hook_->action(*this);
+		}
+		catch(std::exception e){
+			std::cout << "min: Something is wrong with calling the hook! - " << e.what() << std::endl;
+		}
 	}
 
 	// The maximum value of the scroll bar
@@ -201,6 +242,12 @@ public:
 		check_max_min();
 		check_max_current();
 		update_bar_size_info();
+		try {
+			hook_->action(*this);
+		}
+		catch (std::exception e) {
+			std::cout << "max: Something is wrong with calling the hook! - " << e.what() << std::endl;
+		}
 	}
 
 	// Current value of the scroll bar
@@ -209,7 +256,36 @@ public:
 		current_ = current_new;
 		check_min_current();
 		check_max_current();
+		try {
+			hook_->action(*this);
+		}
+		catch (std::exception e) {
+			std::cout << "current: Something is wrong with calling the hook! - " << e.what() << std::endl;
+		}
 	}
+
+	// Hook
+	void hook(ScrollBarHook * new_hook_ptr) {
+		hook_.reset(new_hook_ptr);
+		try {
+			hook_->action(*this);
+		}
+		catch (std::exception e) {
+			std::cout << "hook: Something is wrong with calling the hook! - " << e.what() << std::endl;
+		}
+	}
+
+#ifdef SCROLLBAR4OF_CPP11_STD_FUNCTION
+	void hook(hook_function_type f) {
+		hook_.reset(new ScrollBarHookFunction(f));
+		try {
+			hook_->action(*this);
+		}
+		catch (std::exception e) {
+			std::cout << "hook: Something is wrong with calling the hook! - " << e.what() << std::endl;
+		}
+	}
+#endif
 
 	// The method should be called when the mouse is pressed on the scroll bar.
 	// Call this in `mousePressed' event defined by openFrameworks.
@@ -227,34 +303,30 @@ public:
 		// Where is clicked?
 		if (clickpos_lengthdir < bar_pos_lengthdir_ + bar_width_) {
 			// Button for minus
-			current_ -= change_by_button_;
-			check_min_current();
 			button_press_count_ = 2;
 			minus_button_pressed_ = true;
 			button_pressed_time_ = ofGetElapsedTimeMillis();
+			current(current_ - change_by_button_);
 		} else if (clickpos_lengthdir >= bar_pos_lengthdir_ + bar_length_ - bar_width_) {
 			// Button for plus
-			current_ += change_by_button_;
-			check_max_current();
 			button_press_count_ = 2;
 			plus_button_pressed_ = true;
 			button_pressed_time_ = ofGetElapsedTimeMillis();
+			current(current_ + change_by_button_);
 		} else if (clickpos_lengthdir < knob_top) {
 			// Bar, left/upper side of the knob
-			current_ -= change_by_bar_;
-			check_min_current();
 			button_press_count_ = 2;
 			bar_pressed_ = true;
 			button_press_move_limit_ = DraggedCoord2Value(x, y);
 			button_pressed_time_ = ofGetElapsedTimeMillis();
+			current(current_ - change_by_bar_);
 		} else if (clickpos_lengthdir >= knob_top + knob_size_) {
 			// Bar, right/bottom side of the knob
-			current_ += change_by_bar_;
-			check_max_current();
 			button_press_count_ = 2;
 			bar_pressed_ = true;
 			button_press_move_limit_ = DraggedCoord2Value(x, y);
 			button_pressed_time_ = ofGetElapsedTimeMillis();
+			current(current_ + change_by_bar_);
 		} else {
 			// Knob
 			dragged_pos_ = clickpos_lengthdir - knob_top;

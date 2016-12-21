@@ -19,7 +19,7 @@ class ofApp : public ofBaseApp{
 		void updateScrollBars();
 
 	public:
-		const int ScrollBarWidth = 24;
+		static const int ScrollBarWidth = 24;
 
 		void setup();
 		void update();

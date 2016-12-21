@@ -18,7 +18,9 @@ This sample is for Visual C++ 2015; Visual-C++-specific code is included only fo
 
 ## How to use
 
-Sorry for not preparing the detailed document.
+Sorry for not preparing the detailed document. See the sample code at first.
+
+### Methods for openFrameworks events
 
 An important point is that the following methods for the scroll bars should be invoked in `ofApp::[The same method name]`:
 
@@ -27,6 +29,10 @@ An important point is that the following methods for the scroll bars should be i
 -   `mouseReleased`
 -   `update`
 -   `draw`
+
+### Using hook functions
+
+To conduct some actions whenever the value of a scroll bar is changed, see the examples in `ofApp::setup`. One way is to implement a class inheriting `[Scroll bar type]::ScrollBarHook` and overriding a method `action`; the other is to set a lambda expression (if available; uncomment `//#define SCROLLBAR4OF_CPP11_STD_FUNCTION` in `ScrollBar4OF.hpp`).
 
 ## LICENSE
 
@@ -50,7 +56,9 @@ Released under the MIT License. See `LICENSE` file for the full text.
 
 ## 使い方
 
-恐れ入りますが、詳細なドキュメントは用意していません。
+恐れ入りますが、詳細なドキュメントは用意していません。サンプルコードをまずご覧いただければと思います。
+
+### openFrameworksのイベントのためのメソッド
 
 重要な点として、スクロールバーの以下のメソッドを、`ofApp::[同名のメソッド]`で呼ぶ必要があります。
 
@@ -59,6 +67,10 @@ Released under the MIT License. See `LICENSE` file for the full text.
 -   `mouseReleased`
 -   `update`
 -   `draw`
+
+### フック関数を使う
+
+スクロールバーの値が変化するたびに行いたい処理がある場合については、`ofApp::setup`内のサンプルをご覧ください。「`[スクロールバーの型]::ScrollBarHook`クラスを継承して`action`メソッドをオーバーライドする方法と、（利用できるなら）ラムダ式を用いる方法（`ScrollBar4OF.hpp`内の`//#define SCROLLBAR4OF_CPP11_STD_FUNCTION`をコメントアウトする必要あり）があります。
 
 ## ライセンス
 

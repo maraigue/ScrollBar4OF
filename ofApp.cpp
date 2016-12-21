@@ -21,19 +21,62 @@ void ofApp::updateScrollBars() {
 }
 
 //--------------------------------------------------------------
+
+// Example of hook functions using ScrollBarHook
+// (available even if std::function is not supported)
+
+class VerticalScrollBarStatusDisplay : public VerticalScrollBar::ScrollBarHook {
+public:
+	void action(VerticalScrollBar & vscr) {
+		std::cout << "VerticalScrollBar:   current: " << vscr.current() << ", range: [" << vscr.min() << ", " << vscr.max() << "]" << std::endl;
+		std::cout << "VerticalScrollBar:   bar_width: " << vscr.bar_width() << ", bar_length: " << vscr.bar_length() << std::endl;
+	}
+};
+
+class HorizontalScrollBarStatusDisplay : public HorizontalScrollBar::ScrollBarHook {
+public:
+	void action(HorizontalScrollBar & hscr) {
+		std::cout << "HorizontalScrollBar: current: " << hscr.current() << ", range: [" << hscr.min() << ", " << hscr.max() << "]" << std::endl;
+		std::cout << "HorizontalScrollBar: bar_width: " << hscr.bar_width() << ", bar_length: " << hscr.bar_length() << std::endl;
+	}
+};
+
+//--------------------------------------------------------------
 void ofApp::setup(){
 	ofSetWindowTitle("Picture Viewer Sample");
 
+	std::cout << "Initializing vscroll" << std::endl;
 	vscroll.min(0);
 	vscroll.bar_width(ScrollBarWidth);
 	vscroll.bar_pos_widthdir(0);
 	vscroll.bar_pos_lengthdir(ScrollBarWidth);
 	vscroll.change_by_button(1);
+
+	std::cout << "End initializing vscroll" << std::endl;
+
+	std::cout << "Initializing hscroll" << std::endl;
 	hscroll.min(0);
 	hscroll.bar_width(ScrollBarWidth);
 	hscroll.bar_pos_widthdir(0);
 	hscroll.bar_pos_lengthdir(ScrollBarWidth);
 	hscroll.change_by_button(1);
+
+#ifdef SCROLLBAR4OF_CPP11_STD_FUNCTION
+	// Example of hook functions using lambda function
+	// (available only if lambda function notation and std::function is supported)
+	vscroll.hook([](VerticalScrollBar & vscr) {
+		std::cout << "VerticalScrollBar:   current: " << vscr.current() << ", range: [" << vscr.min() << ", " << vscr.max() << "]" << std::endl;
+		std::cout << "VerticalScrollBar:   bar_width: " << vscr.bar_width() << ", bar_length: " << vscr.bar_length() << std::endl;
+	});
+	hscroll.hook([](HorizontalScrollBar & hscr) {
+		std::cout << "HorizontalScrollBar: current: " << hscr.current() << ", range: [" << hscr.min() << ", " << hscr.max() << "]" << std::endl;
+		std::cout << "HorizontalScrollBar: bar_width: " << hscr.bar_width() << ", bar_length: " << hscr.bar_length() << std::endl;
+	});
+#else // SCROLLBAR4OF_CPP11_STD_FUNCTION
+	vscroll.hook(new VerticalScrollBarStatusDisplay());
+	hscroll.hook(new HorizontalScrollBarStatusDisplay());
+#endif // SCROLLBAR4OF_CPP11_STD_FUNCTION
+	std::cout << "End initializing hscroll" << std::endl;
 }
 
 //--------------------------------------------------------------
@@ -107,7 +150,7 @@ void ofApp::mousePressed(int x, int y, int button){
 
 	// Selects the picture to show
 	std::vector<char> fileName;
-	fileName.reserve(MAX_PATH + 1);
+	fileName.resize(MAX_PATH + 1);
 	fileName[0] = '\0';
 
 	OPENFILENAMEA ofn;
