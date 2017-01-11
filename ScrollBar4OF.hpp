@@ -223,6 +223,8 @@ public:
 	// The minimum value of the scroll bar
 	int min() const { return min_; }
 	void min(int min_new) {
+		if (min_ == min_new) return;
+
 		min_ = min_new;
 		check_min_max();
 		check_min_current();
@@ -238,6 +240,8 @@ public:
 	// The maximum value of the scroll bar
 	int max() const { return max_; }
 	void max(int max_new) {
+		if (max_ == max_new) return;
+
 		max_ = max_new;
 		check_max_min();
 		check_max_current();
@@ -253,6 +257,8 @@ public:
 	// Current value of the scroll bar
 	int current() const { return current_; }
 	void current(int current_new) {
+		if (current_ == current_new) return;
+
 		current_ = current_new;
 		check_min_current();
 		check_max_current();
