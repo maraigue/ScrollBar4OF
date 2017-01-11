@@ -70,7 +70,7 @@ Released under the MIT License. See `LICENSE` file for the full text.
 
 ### フック関数を使う
 
-スクロールバーの値が変化するたびに行いたい処理がある場合については、`ofApp::setup`内のサンプルをご覧ください。「`[スクロールバーの型]::ScrollBarHook`クラスを継承して`action`メソッドをオーバーライドする方法と、（利用できるなら）ラムダ式を用いる方法（`ScrollBar4OF.hpp`内の`//#define SCROLLBAR4OF_CPP11_STD_FUNCTION`をコメントアウトする必要あり）があります。
+スクロールバーの値が変化するたびに行いたい処理がある場合については、`ofApp::setup`内のサンプルをご覧ください。「`[スクロールバーの型]::ScrollBarHook`クラスを継承して`action`メソッドをオーバーライドする方法と、（利用できるなら）ラムダ式を用いる方法（`ScrollBar4OF.hpp`内の`//#define SCROLLBAR4OF_CPP11_STD_FUNCTION`をコメントアウトを解除する必要あり）があります。
 
 ## ライセンス
 
